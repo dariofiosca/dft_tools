@@ -4,4 +4,8 @@ numpy
 scipy
 meson
 setuptools
+<<<<<<< HEAD
 ninja
+=======
+ninja
+>>>>>>> upstream/unstable
