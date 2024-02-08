@@ -1,4 +1,3 @@
-
 ################################################################################
 #
 # TRIQS: a Toolbox for Research in Interacting Quantum Systems
@@ -40,6 +39,7 @@ np.set_printoptions(suppress=True)
 
 log = logging.getLogger('plovasp.proj_shell')
 
+
 ################################################################################
 ################################################################################
 #
@@ -61,6 +61,7 @@ class ProjectorShell:
     - proj_params (list[dict]) : parameters of raw projectors from LOCPROJ
     - nc_flag (bool) : True if projectors are for non-collinear magnetic state
     """
+
     def __init__(self, sh_pars, proj_raw, proj_params, kmesh, structure, nc_flag):
         self.lorb = sh_pars['lshell']
         self.ions = sh_pars['ions']
@@ -72,8 +73,8 @@ class ProjectorShell:
         self.ion_sort = [sh_pars['ion_sort']]
         self.nc_flag = nc_flag
 
-        self.lm1 = self.lorb**2
-        self.lm2 = (self.lorb + 1)**2
+        self.lm1 = self.lorb ** 2
+        self.lm2 = (self.lorb + 1) ** 2
 
         self.nion = self.ions['nion']
 
@@ -96,7 +97,7 @@ class ProjectorShell:
                     if ion in eq_cl:
                         log.debug(f"--     adding to equivalence class ({icl}, {eq_cl})")
                         log.debug(f"--     ion = {ion}, ion_rep = {ion_rep}")
-                        self.ion_sort.append(ion_rep + 1) # Enumerate classes starting from 1
+                        self.ion_sort.append(ion_rep + 1)  # Enumerate classes starting from 1
                         break
 
         log.debug(f"--   ion_sort: {self.ion_sort}")
@@ -105,11 +106,11 @@ class ProjectorShell:
 
         self.extract_projectors(proj_raw, proj_params, kmesh, structure)
 
-################################################################################
-#
-# extract_tmatrices
-#
-################################################################################
+    ################################################################################
+    #
+    # extract_tmatrices
+    #
+    ################################################################################
     def extract_tmatrices(self, sh_pars):
         """
         Extracts and interprets transformation matrices provided by the
@@ -141,8 +142,8 @@ class ProjectorShell:
             raw_matrices = sh_pars['tmatrices']
             nrow, ncol = raw_matrices.shape
 
-            assert nrow%nion == 0, "Number of rows in TRANSFILE must be divisible by the number of ions"
-            assert ncol%nm == 0, "Number of columns in TRANSFILE must be divisible by the number of orbitals 2*l + 1"
+            assert nrow % nion == 0, "Number of rows in TRANSFILE must be divisible by the number of ions"
+            assert ncol % nm == 0, "Number of columns in TRANSFILE must be divisible by the number of orbitals 2*l + 1"
 
             nr = nrow // nion
             nsize = ncol // nm
@@ -151,8 +152,8 @@ class ProjectorShell:
             is_complex = nsize > 1
             ns_dim = max(1, nsize // 2)
 
-# Dimension of the orbital subspace
-            assert nr%ns_dim == 0, "Number of rows in TRANSFILE is not compatible with the spin dimension"
+            # Dimension of the orbital subspace
+            assert nr % ns_dim == 0, "Number of rows in TRANSFILE is not compatible with the spin dimension"
             ndim = nr // ns_dim
 
             self.tmatrices = np.zeros((nion, nr, nm * ns_dim), dtype=complex)
@@ -173,9 +174,9 @@ class ProjectorShell:
             raw_matrix = sh_pars['tmatrix']
             nrow, ncol = raw_matrix.shape
 
-            assert ncol%nm == 0, "Number of columns in TRANSFORM must be divisible by the number of orbitals 2*l + 1"
+            assert ncol % nm == 0, "Number of columns in TRANSFORM must be divisible by the number of orbitals 2*l + 1"
 
-# Only spin-independent matrices are expected here
+            # Only spin-independent matrices are expected here
             nsize = ncol // nm
             assert nsize in (1, 2), "Number of columns in TRANSFORM must be divisible by either 1 or 2"
 
@@ -193,24 +194,24 @@ class ProjectorShell:
 
             return ndim
 
-# If no transformation matrices are provided define a default one
+        # If no transformation matrices are provided define a default one
         self.do_transform = False
 
         ns_dim = 1
         ndim = nm * ns_dim
 
-# We still need the matrices for the output
+        # We still need the matrices for the output
         self.tmatrices = np.zeros((nion, ndim, ndim), dtype=complex)
         for io in range(nion):
             self.tmatrices[io, :, :] = np.identity(ndim, dtype=complex)
 
         return ndim
 
-################################################################################
-#
-# extract_projectors
-#
-################################################################################
+    ################################################################################
+    #
+    # extract_projectors
+    #
+    ################################################################################
     def extract_projectors(self, proj_raw, proj_params, kmesh, structure):
         """
         Extracts projectors for the given shell.
@@ -225,7 +226,7 @@ class ProjectorShell:
         if self.nc_flag == 0:
             nlm = self.lm2 - self.lm1
         else:
-            nlm = 2*(self.lm2 - self.lm1)
+            nlm = 2 * (self.lm2 - self.lm1)
 
         if self.do_transform:
             ndim = self.tmatrices.shape[1]
@@ -236,31 +237,31 @@ class ProjectorShell:
                     proj_k = np.zeros((ns, nlm, nb), dtype=complex)
                     qcoord = structure['qcoords'][ion]
                     for m in range(nlm):
-# Here we search for the index of the projector with the given isite/l/m indices
+                        # Here we search for the index of the projector with the given isite/l/m indices
                         for ip, par in enumerate(proj_params):
                             if par['isite'] - 1 == ion and par['l'] == self.lorb and par['m'] == m:
-                                proj_k[:, m, :] = proj_raw[ip, :, ik, :]  #* kphase
+                                proj_k[:, m, :] = proj_raw[ip, :, ik, :]  # * kphase
                                 break
                     for isp in range(ns):
                         self.proj_arr[io, isp, ik, :, :] = np.dot(self.tmatrices[io, :, :], proj_k[isp, :, :])
 
         else:
-# No transformation: just copy the projectors as they are
+            # No transformation: just copy the projectors as they are
             self.proj_arr = np.zeros((nion, ns, nk, nlm, nb), dtype=complex)
             for io, ion in enumerate(self.ion_list):
                 qcoord = structure['qcoords'][ion]
                 for m in range(nlm):
-# Here we search for the index of the projector with the given isite/l/m indices
+                    # Here we search for the index of the projector with the given isite/l/m indices
                     for ip, par in enumerate(proj_params):
                         if par['isite'] - 1 == ion and par['l'] == self.lorb and par['m'] == m:
                             self.proj_arr[io, :, :, m, :] = proj_raw[ip, :, :, :]
                             break
 
-################################################################################
-#
-# select_projectors
-#
-################################################################################
+    ################################################################################
+    #
+    # select_projectors
+    #
+    ################################################################################
     def select_projectors(self, ib_win, ib_min, ib_max):
         """
         Selects a subset of projectors corresponding to a given energy window.
@@ -270,16 +271,16 @@ class ProjectorShell:
         self.ib_max = ib_max
         nb_max = ib_max - ib_min + 1
 
-# Set the dimensions of the array
+        # Set the dimensions of the array
         nion, ns, nk, nlm, nbtot = self.proj_arr.shape
-# !!! Note that the order of the two last indices is different !!!
+        # !!! Note that the order of the two last indices is different !!!
         self.proj_win = np.zeros((nion, ns, nk, nlm, nb_max), dtype=complex)
 
-# Select projectors for a given energy window
+        # Select projectors for a given energy window
         ns_band = self.ib_win.shape[1]
         if ns == 1:
             for ik in range(nk):
-# TODO: for non-collinear case something else should be done here
+                # TODO: for non-collinear case something else should be done here
                 is_b = min(0, ns_band)
                 ib1 = self.ib_win[ik, is_b, 0]
                 ib2 = self.ib_win[ik, is_b, 1] + 1
@@ -294,18 +295,18 @@ class ProjectorShell:
                     ib_win = ib2 - ib1
                     self.proj_win[:, isp, ik, :, :ib_win] = self.proj_arr[:, isp, ik, :, ib1:ib2]
 
-################################################################################
-#
-# density_matrix
-#
-################################################################################
+    ################################################################################
+    #
+    # density_matrix
+    #
+    ################################################################################
     def density_matrix(self, el_struct, site_diag=True, spin_diag=True):
         """
         Returns occupation matrix/matrices for the shell.
         """
         nion, ns, nk, nlm, nbtot = self.proj_win.shape
 
-#        assert site_diag, "site_diag = False is not implemented"
+        #        assert site_diag, "site_diag = False is not implemented"
         assert spin_diag, "spin_diag = False is not implemented"
 
         if site_diag:
@@ -316,7 +317,7 @@ class ProjectorShell:
             occ_mats = np.zeros((ns, 1, ndim, ndim), dtype=float)
             overlaps = np.zeros((ns, 1, ndim, ndim), dtype=float)
 
-#        self.proj_win = np.zeros((nion, ns, nk, nlm, nb_max), dtype=complex)
+        #        self.proj_win = np.zeros((nion, ns, nk, nlm, nb_max), dtype=complex)
         kweights = el_struct.kmesh['kweights']
         occnums = el_struct.ferw
         ib1 = self.ib_min
@@ -334,12 +335,13 @@ class ProjectorShell:
                         if np.isnan(array_sum) == True:
                             count_nan += 1
                         if self.nc_flag == True:
-                            occ_mats[isp, io, :, :] += 0.5 * np.dot(proj_k * occ[ib1:ib2], proj_k.T.conj()).real * weight
+                            occ_mats[isp, io, :, :] += 0.5 * np.dot(proj_k * occ[ib1:ib2],
+                                                                    proj_k.T.conj()).real * weight
                             overlaps[isp, io, :, :] += np.dot(proj_k, proj_k.T.conj()).real * weight
                         else:
                             occ_mats[isp, io, :, :] += np.dot(proj_k * occ[ib1:ib2], proj_k.T.conj()).real * weight
                             overlaps[isp, io, :, :] += np.dot(proj_k, proj_k.T.conj()).real * weight
-            assert count_nan == 0, "!!! WARNING !!!: There are %s  NaN in your Projectors"%(count_nan)
+            assert count_nan == 0, "!!! WARNING !!!: There are %s  NaN in your Projectors" % (count_nan)
 
         else:
             proj_k = np.zeros((ndim, nbtot), dtype=complex)
@@ -351,17 +353,16 @@ class ProjectorShell:
                         proj_k[i1:i2, :] = self.proj_win[io, isp, ik, ...]
                     # TODO
                     occ_mats[isp, 0, :, :] += np.dot(proj_k * occ[ib1:ib2],
-                                                 proj_k.conj().T).real * weight
-                    overlaps[isp, 0, :, :] += np.dot(proj_k,proj_k.conj().T).real * weight
-
+                                                     proj_k.conj().T).real * weight
+                    overlaps[isp, 0, :, :] += np.dot(proj_k, proj_k.conj().T).real * weight
 
         return occ_mats, overlaps
 
-################################################################################
-#
-# local_hamiltonian
-#
-################################################################################
+    ################################################################################
+    #
+    # local_hamiltonian
+    #
+    ################################################################################
     def local_hamiltonian(self, el_struct, site_diag=True, spin_diag=True):
         """
         Returns occupation matrix/matrices for the shell.
@@ -373,41 +374,41 @@ class ProjectorShell:
 
         loc_ham = np.zeros((ns, nion, nlm, nlm), dtype=complex)
 
-#        self.proj_win = np.zeros((nion, ns, nk, nlm, nb_max), dtype=complex)
+        #        self.proj_win = np.zeros((nion, ns, nk, nlm, nb_max), dtype=complex)
         kweights = el_struct.kmesh['kweights']
         occnums = el_struct.ferw
         ib1 = self.ib_min
         ib2 = self.ib_max + 1
         for isp in range(ns):
             for ik, weight, occ, eigk in zip(it.count(), kweights, occnums[isp, :, :],
-                                          el_struct.eigvals[:, ib1:ib2, isp]):
+                                             el_struct.eigvals[:, ib1:ib2, isp]):
                 for io in range(nion):
                     proj_k = self.proj_win[io, isp, ik, ...]
                     # VASP.6.
                     if self.nc_flag == True:
                         loc_ham[isp, io, :, :] += np.dot(proj_k * (eigk - el_struct.efermi),
-                                                     proj_k.conj().T) * weight * 0.5
+                                                         proj_k.conj().T) * weight * 0.5
                     else:
                         loc_ham[isp, io, :, :] += np.dot(proj_k * (eigk - el_struct.efermi),
-                                                     proj_k.conj().T) * weight
+                                                         proj_k.conj().T) * weight
 
         return loc_ham
 
-################################################################################
-#
-# density_of_states
-#
-################################################################################
+    ################################################################################
+    #
+    # density_of_states
+    #
+    ################################################################################
     def density_of_states(self, el_struct, emesh):
         """
         Returns projected DOS for the shell.
         """
         nion, ns, nk, nlm, nbtot = self.proj_win.shape
 
-# There is a problem with data storage structure of projectors that will
-# make life more complicated. The problem is that band-indices of projectors
-# for different k-points do not match because we store 'nb_max' values starting
-# from 0.
+        # There is a problem with data storage structure of projectors that will
+        # make life more complicated. The problem is that band-indices of projectors
+        # for different k-points do not match because we store 'nb_max' values starting
+        # from 0.
         nb_max = self.ib_max - self.ib_min + 1
         ns_band = self.ib_win.shape[1]
 
@@ -421,41 +422,43 @@ class ProjectorShell:
                 ib2 = self.ib_win[ik, is_b, 1] + 1
                 for ib_g in range(ib1, ib2):
                     for io in range(nion):
-# Note the difference between 'ib' and 'ibn':
-#  'ib'  counts from 0 to 'nb_k - 1'
-#  'ibn' counts from 'ib1 - ib_min' to 'ib2 - ib_min'
+                        # Note the difference between 'ib' and 'ibn':
+                        #  'ib'  counts from 0 to 'nb_k - 1'
+                        #  'ibn' counts from 'ib1 - ib_min' to 'ib2 - ib_min'
                         ib = ib_g - ib1
                         ibn = ib_g - self.ib_min
                         proj_k = self.proj_win[io, isp, ik, :, ib]
                         w_k[ik, ib, isp, io, :] = proj_k * proj_k.conj()
 
-#        eigv_ef = el_struct.eigvals[ik, ib, isp] - el_struct.efermi
+        #        eigv_ef = el_struct.eigvals[ik, ib, isp] - el_struct.efermi
         itt = el_struct.kmesh['itet'].T.copy()
-# k-indices are starting from 0 in Python
+        # k-indices are starting from 0 in Python
         itt[1:, :] -= 1
         for isp in range(ns):
-            for ib, eigk in enumerate(el_struct.eigvals[:, self.ib_min:self.ib_max+1, isp].T):
+            for ib, eigk in enumerate(el_struct.eigvals[:, self.ib_min:self.ib_max + 1, isp].T):
                 for ie, e in enumerate(emesh):
                     eigk_ef = eigk - el_struct.efermi
                     cti = atm.dos_tetra_weights_3d(eigk_ef, e, itt)
                     for im in range(nlm):
                         for io in range(nion):
-                            dos[ie, isp, io, im] += np.sum((cti * w_k[itt[1:, :], ib, isp, io, im].real).sum(0) * itt[0, :])
+                            dos[ie, isp, io, im] += np.sum(
+                                (cti * w_k[itt[1:, :], ib, isp, io, im].real).sum(0) * itt[0, :])
 
         dos *= 2 * el_struct.kmesh['volt']
-#        for isp in range(ns):
-#            for ik, weight, occ in zip(it.count(), kweights, occnums[isp, :, :]):
-#                for io in range(nion):
-#                    proj_k = self.proj_win[isp, io, ik, ...]
-#                    occ_mats[isp, io, :, :] += np.dot(proj_k * occ[ib1:ib2],
-#                                                 proj_k.conj().T).real * weight
-#                    overlaps[isp, io, :, :] += np.dot(proj_k,
-#                                                 proj_k.conj().T).real * weight
+        #        for isp in range(ns):
+        #            for ik, weight, occ in zip(it.count(), kweights, occnums[isp, :, :]):
+        #                for io in range(nion):
+        #                    proj_k = self.proj_win[isp, io, ik, ...]
+        #                    occ_mats[isp, io, :, :] += np.dot(proj_k * occ[ib1:ib2],
+        #                                                 proj_k.conj().T).real * weight
+        #                    overlaps[isp, io, :, :] += np.dot(proj_k,
+        #                                                 proj_k.conj().T).real * weight
 
-#        if not symops is None:
-#            occ_mats = symmetrize_matrix_set(occ_mats, symops, ions, perm_map)
+        #        if not symops is None:
+        #            occ_mats = symmetrize_matrix_set(occ_mats, symops, ions, perm_map)
 
         return dos
+
 
 ################################################################################
 ################################################################################
@@ -475,6 +478,7 @@ class ComplementShell(ProjectorShell):
     - proj_compl (numpy.array) : array of complement projectors
 
     """
+
     def __init__(self, sh_pars, proj_compl, nc_flag):
         self.lorb = sh_pars['lshell']
         self.ions = sh_pars['ions']
@@ -486,18 +490,17 @@ class ComplementShell(ProjectorShell):
         self.ib_max = sh_pars['ib_max']
         self.ib_win = sh_pars['ib_win']
 
-
-        #self.lm1 = self.lorb**2
-        #self.lm2 = (self.lorb+1)**2
+        # self.lm1 = self.lorb**2
+        # self.lm2 = (self.lorb+1)**2
 
         self.nion = self.ions['nion']
-# Extract ion list and equivalence classes (ion sorts)
+        # Extract ion list and equivalence classes (ion sorts)
         self.ion_list = sorted(it.chain(*self.ions['ion_list']))
         self.ion_sort = []
         for ion in self.ion_list:
             for icl, eq_cl in enumerate(self.ions['ion_list']):
                 if ion in eq_cl:
-                    self.ion_sort.append(icl + 1) # Enumerate classes starting from 1
+                    self.ion_sort.append(icl + 1)  # Enumerate classes starting from 1
                     break
 
         self.ndim = proj_compl.shape[3]
@@ -512,5 +515,5 @@ class ComplementShell(ProjectorShell):
     def density_matrix(self, el_struct, site_diag=True, spin_diag=True):
         raise Exception('not implemented')
 
-    #def density_of_states(self, el_struct, emesh):
+    # def density_of_states(self, el_struct, emesh):
     #    raise Exception('not implemented')
