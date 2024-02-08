@@ -1,3 +1,4 @@
+
 ################################################################################
 #
 # TRIQS: a Toolbox for Research in Interacting Quantum Systems
@@ -42,7 +43,7 @@ from .plotools import generate_plo, output_as_text
 import logging
 
 # Uncomment this to get extra output
-# logging.basicConfig(level=logging.DEBUG)
+#logging.basicConfig(level=logging.DEBUG)
 
 # Main logger from which all other loggers should be inherited
 main_log = logging.getLogger('plovasp')
@@ -59,11 +60,11 @@ def generate_and_output_as_text(conf_filename, vasp_dir):
     """
     Parse config file, process VASP data, and store as text.
     """
-    # Prepare input-file parameters
+# Prepare input-file parameters
     pars = ConfigParameters(conf_filename, verbosity=0)
     pars.parse_input()
 
-    # Read VASP data
+# Read VASP data
     if 'efermi' in pars.general:
         efermi_required = False
     else:
@@ -74,10 +75,9 @@ def generate_and_output_as_text(conf_filename, vasp_dir):
     if 'efermi' in pars.general:
         el_struct.efermi = pars.general['efermi']
 
-    # Generate and store PLOs
+# Generate and store PLOs
     pshells, pgroups = generate_plo(pars, el_struct)
     output_as_text(pars, el_struct, pshells, pgroups)
-
 
 def main():
     """
@@ -99,7 +99,6 @@ def main():
             vasp_dir = './'
 
     generate_and_output_as_text(filename, vasp_dir)
-
 
 if __name__ == '__main__':
     main()
