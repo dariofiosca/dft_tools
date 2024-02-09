@@ -1,4 +1,3 @@
-
 ################################################################################
 #
 # TRIQS: a Toolbox for Research in Interacting Quantum Systems
@@ -36,6 +35,7 @@ import sys
 import itertools as it
 from . import vaspio
 
+
 def issue_warning(message):
     """
     Issues a warning.
@@ -43,6 +43,7 @@ def issue_warning(message):
     print()
     print("  !!! WARNING !!!: " + message)
     print()
+
 
 ################################################################################
 ################################################################################
@@ -66,11 +67,12 @@ class ConfigParameters:
       1. internal name of a parameter
       2. function used to convert an input string into data for a given parameter
     """
-################################################################################
-#
-# __init__()
-#
-################################################################################
+
+    ################################################################################
+    #
+    # __init__()
+    #
+    ################################################################################
     def __init__(self, input_filename, verbosity=1):
         self.verbosity = verbosity
         self.cp = configparser.ConfigParser()
@@ -85,7 +87,7 @@ class ConfigParameters:
         self.sh_optional = {
             'transform': ('tmatrix', lambda s: self.parse_string_tmatrix(s, real=True)),
             'transfile': ('tmatrices', self.parse_file_tmatrix),
-            'sort': ('ion_sort', self.parse_string_int,None),
+            'sort': ('ion_sort', self.parse_string_int, None),
             'corr': ('corr', self.parse_string_logical, True)}
 
         self.gr_required = {
@@ -93,26 +95,25 @@ class ConfigParameters:
             'ewindow': ('ewindow', self.parse_energy_window)}
 
         self.gr_optional = {
-            'normalize' : ('normalize', self.parse_string_logical, True),
-            'normion' : ('normion', self.parse_string_logical, False),
-            'complement' : ('complement', self.parse_string_logical, False),
+            'normalize': ('normalize', self.parse_string_logical, True),
+            'normion': ('normion', self.parse_string_logical, False),
+            'complement': ('complement', self.parse_string_logical, False),
             'bands': ('bands', self.parse_band_window)}
 
-
         self.gen_optional = {
-            'basename' : ('basename', str, 'vasp'),
-            'efermi' : ('efermi', float),
+            'basename': ('basename', str, 'vasp'),
+            'efermi': ('efermi', float),
             'dosmesh': ('dosmesh', self.parse_string_dosmesh),
             'hk': ('hk', self.parse_string_logical, False)}
 
-#
-# Special parsers
-#
-################################################################################
-#
-# parse_string_ion_list()
-#
-################################################################################
+    #
+    # Special parsers
+    #
+    ################################################################################
+    #
+    # parse_string_ion_list()
+    #
+    ################################################################################
     def parse_string_ion_list(self, par_str):
         """
         The ion list accepts the following formats:
@@ -129,28 +130,28 @@ class ConfigParameters:
         """
         ion_info = {}
 
-# First check if a range is given
+        # First check if a range is given
         patt = '([0-9]+)\.\.([0-9]+)'
         match = re.match(patt, par_str)
         if match:
             i1, i2 = tuple(map(int, match.groups()[:2]))
             mess = "First index of the range must be smaller or equal to the second"
             assert i1 <= i2, mess
-# Note that we need to subtract 1 from VASP indices
+            # Note that we need to subtract 1 from VASP indices
             ion_info['ion_list'] = [[ion - 1] for ion in range(i1, i2 + 1)]
             ion_info['nion'] = len(ion_info['ion_list'])
         else:
-# Check if a set of indices is given
+            # Check if a set of indices is given
             try:
                 l_tmp = list(map(int, par_str.split()))
                 l_tmp.sort()
-# Subtract 1 so that VASP indices (starting with 1) are converted
-# to Python indices (starting with 0)
+                # Subtract 1 so that VASP indices (starting with 1) are converted
+                # to Python indices (starting with 0)
                 ion_info['ion_list'] = [[ion - 1] for ion in l_tmp]
                 ion_info['nion'] = len(ion_info['ion_list'])
             except ValueError:
                 pass
-# Check if equivalence classes are given
+        # Check if equivalence classes are given
 
         if not ion_info:
             try:
@@ -177,15 +178,15 @@ class ConfigParameters:
             ion_list = ion_info['ion_list']
 
             assert all([all([ion >= 0 for ion in gr]) for gr in ion_list]), (
-               "Lowest ion index is smaller than 1 in '%s'"%(par_str))
+                    "Lowest ion index is smaller than 1 in '%s'" % (par_str))
 
         return ion_info
 
-################################################################################
-#
-# parse_string_logical()
-#
-################################################################################
+    ################################################################################
+    #
+    # parse_string_logical()
+    #
+    ################################################################################
     def parse_string_logical(self, par_str):
         """
         Logical parameters are given by string 'True' or 'False'
@@ -196,23 +197,22 @@ class ConfigParameters:
         assert first_char in 'tf', "Logical parameters should be given by either 'True' or 'False'"
         return first_char == 't'
 
-
-################################################################################
-#
-# parse_string_int()
-#
-################################################################################
+    ################################################################################
+    #
+    # parse_string_int()
+    #
+    ################################################################################
     def parse_string_int(self, par_str):
         """
         int parameters
         """
         return int(par_str)
 
-################################################################################
-#
-# parse_energy_window()
-#
-################################################################################
+    ################################################################################
+    #
+    # parse_energy_window()
+    #
+    ################################################################################
     def parse_energy_window(self, par_str):
         """
         Energy window is given by two floats, with the first one being smaller
@@ -223,11 +223,11 @@ class ConfigParameters:
         assert ftmp[0] < ftmp[1], "The first float in EWINDOW must be smaller than the second one"
         return tuple(ftmp)
 
-################################################################################
-#
-# parse_band_window()
-#
-################################################################################
+    ################################################################################
+    #
+    # parse_band_window()
+    #
+    ################################################################################
     def parse_band_window(self, par_str):
         """
         Band window is given by two ints, with the first one being smaller
@@ -238,11 +238,11 @@ class ConfigParameters:
         assert ftmp[0] < ftmp[1], "The first int in BANDS must be smaller than the second one"
         return tuple(ftmp)
 
-################################################################################
-#
-# parse_string_tmatrix()
-#
-################################################################################
+    ################################################################################
+    #
+    # parse_string_tmatrix()
+    #
+    ################################################################################
     def parse_string_tmatrix(self, par_str, real):
         """
         Transformation matrix is defined as a set of rows separated
@@ -252,20 +252,20 @@ class ConfigParameters:
         try:
             rows = [list(map(float, s.split())) for s in str_rows]
         except ValueError:
-            err_mess = "Cannot parse a matrix string:\n%s"%(par_str)
+            err_mess = "Cannot parse a matrix string:\n%s" % (par_str)
             raise ValueError(err_mess)
 
         nr = len(rows)
         nm = len(rows[0])
 
-        err_mess = "Number of columns must be the same:\n%s"%(par_str)
+        err_mess = "Number of columns must be the same:\n%s" % (par_str)
         for row in rows:
             assert len(row) == nm, err_mess
 
         if real:
             mat = np.array(rows)
         else:
-            err_mess = "Complex matrix must contain 2*M values:\n%s"%(par_str)
+            err_mess = "Complex matrix must contain 2*M values:\n%s" % (par_str)
             assert 2 * (nm // 2) == nm, err_mess
 
             tmp = np.array(rows, dtype=complex)
@@ -273,11 +273,11 @@ class ConfigParameters:
 
         return mat
 
-################################################################################
-#
-# parse_file_tmatrix()
-#
-################################################################################
+    ################################################################################
+    #
+    # parse_file_tmatrix()
+    #
+    ################################################################################
     def parse_file_tmatrix(self, filename):
         """
         Parses a file 'filename' containing transformation matrices
@@ -288,11 +288,11 @@ class ConfigParameters:
         tmatrices = np.loadtxt(filename)
         return tmatrices
 
-################################################################################
-#
-# parse_string_dosmesh()
-#
-################################################################################
+    ################################################################################
+    #
+    # parse_string_dosmesh()
+    #
+    ################################################################################
     def parse_string_dosmesh(self, par_str):
         """
         Two formats are accepted:
@@ -328,11 +328,11 @@ class ConfigParameters:
 
         return dos_pars
 
-################################################################################
-#
-# parse_parameter_set()
-#
-################################################################################
+    ################################################################################
+    #
+    # parse_parameter_set()
+    #
+    ################################################################################
     def parse_parameter_set(self, section, param_set, exception=False, defaults=True):
         """
         Parses required or optional parameter set from a section.
@@ -345,34 +345,33 @@ class ConfigParameters:
                 par_str = self.cp.get(section, par)
             except (configparser.NoOptionError, configparser.NoSectionError):
                 if exception:
-                    message = "Required parameter '%s' not found in section [%s]"%(par, section)
+                    message = "Required parameter '%s' not found in section [%s]" % (par, section)
                     raise Exception(message)
                 else:
-# Use the default value if there is one
+                    # Use the default value if there is one
                     if defaults and len(param_set[par]) > 2:
                         parsed[key] = param_set[par][2]
                     continue
 
             if self.verbosity > 0:
-                print("  %s = %s"%(par, par_str))
+                print("  %s = %s" % (par, par_str))
 
             parse_fun = param_set[par][1]
             parsed[key] = parse_fun(par_str)
 
         return parsed
 
-
-################################################################################
-#
-# parse_shells()
-#
-################################################################################
+    ################################################################################
+    #
+    # parse_shells()
+    #
+    ################################################################################
     def parse_shells(self):
         """
         Parses all [Shell] sections.
         """
-# Find all [Shell] sections
-# (note that ConfigParser transforms all names to lower case)
+        # Find all [Shell] sections
+        # (note that ConfigParser transforms all names to lower case)
         sections = self.cp.sections()
 
         sh_patt1 = re.compile('shell +.*', re.IGNORECASE)
@@ -384,72 +383,72 @@ class ConfigParameters:
         if self.verbosity > 0:
             print()
             if self.nshells > 1:
-                print("  Found %i projected shells"%(self.nshells))
+                print("  Found %i projected shells" % (self.nshells))
             else:
                 print("  Found 1 projected shell")
 
-# Get shell indices
+        # Get shell indices
         sh_patt2 = re.compile('shell +([0-9]*)$', re.IGNORECASE)
         try:
             get_ind = lambda s: int(sh_patt2.match(s).groups()[0])
             sh_inds = list(map(get_ind, sec_shells))
         except (ValueError, AttributeError):
-            raise ValueError("Failed to extract shell indices from a list: %s"%(sec_shells))
+            raise ValueError("Failed to extract shell indices from a list: %s" % (sec_shells))
 
         self.sh_sections = {ind: sec for ind, sec in zip(sh_inds, sec_shells)}
 
-# Check that all indices are unique
-# In principle redundant because the list of sections will contain only unique names
+        # Check that all indices are unique
+        # In principle redundant because the list of sections will contain only unique names
         assert len(sh_inds) == len(set(sh_inds)), "There must be no shell with the same index!"
 
-# Ideally, indices should run from 1 to <nshells>
-# If it's not the case, issue a warning
+        # Ideally, indices should run from 1 to <nshells>
+        # If it's not the case, issue a warning
         sh_inds.sort()
         if sh_inds != list(range(1, len(sh_inds) + 1)):
             issue_warning("Shell indices are not uniform or not starting from 1. "
-               "This might be an indication of a incorrect setup.")
+                          "This might be an indication of a incorrect setup.")
 
-# Parse shell parameters and put them into a list sorted according to the original indices
+        # Parse shell parameters and put them into a list sorted according to the original indices
         self.shells = []
         for ind in sh_inds:
             shell = {}
-# Store the original user-defined index
+            # Store the original user-defined index
             shell['user_index'] = ind
             section = self.sh_sections[ind]
 
             if self.verbosity > 0:
                 print()
                 print("  Shell parameters:")
-# Shell required parameters
+            # Shell required parameters
             parsed = self.parse_parameter_set(section, self.sh_required, exception=True)
             shell.update(parsed)
 
-# Shell optional parameters
+            # Shell optional parameters
             parsed = self.parse_parameter_set(section, self.sh_optional, exception=False)
             shell.update(parsed)
 
-# Group required parameters
-# Must be given if no group is explicitly specified
-# If in conflict with the [Group] section, the latter has a priority
+            # Group required parameters
+            # Must be given if no group is explicitly specified
+            # If in conflict with the [Group] section, the latter has a priority
             parsed = self.parse_parameter_set(section, self.gr_required, exception=False)
             shell.update(parsed)
 
-# Group optional parameters
+            # Group optional parameters
             parsed = self.parse_parameter_set(section, self.gr_optional, exception=False, defaults=False)
             shell.update(parsed)
 
             self.shells.append(shell)
 
-################################################################################
-#
-# parse_groups()
-#
-################################################################################
+    ################################################################################
+    #
+    # parse_groups()
+    #
+    ################################################################################
     def parse_groups(self):
         """
         Parses [Group] sections.
         """
-# Find group sections
+        # Find group sections
         sections = self.cp.sections()
 
         gr_patt = re.compile('group +(.*)', re.IGNORECASE)
@@ -458,40 +457,40 @@ class ConfigParameters:
         self.ngroups = len(sec_groups)
 
         self.groups = []
-# Parse group parameters
+        # Parse group parameters
         for section in sec_groups:
             group = {}
 
-# Extract group index (FIXME: do we really need it?)
+            # Extract group index (FIXME: do we really need it?)
             gr_patt2 = re.compile('group +([0-9]*)$', re.IGNORECASE)
             try:
                 gr_ind = int(gr_patt2.match(section).groups()[0])
             except (ValueError, AttributeError):
-                raise ValueError("Failed to extract group index from a group name: %s"%(section))
+                raise ValueError("Failed to extract group index from a group name: %s" % (section))
             group['index'] = gr_ind
 
             if self.verbosity > 0:
                 print()
                 print("  Group parameters:")
-# Group required parameters
+            # Group required parameters
             parsed = self.parse_parameter_set(section, self.gr_required, exception=True)
             group.update(parsed)
 
-# Group optional parameters
+            # Group optional parameters
             parsed = self.parse_parameter_set(section, self.gr_optional, exception=False)
             group.update(parsed)
 
             self.groups.append(group)
 
-# Sort groups according to indices defined in the config-file
+        # Sort groups according to indices defined in the config-file
         if self.ngroups > 0:
             self.groups.sort(key=lambda g: g['index'])
 
-################################################################################
-#
-# groups_shells_consistency()
-#
-################################################################################
+    ################################################################################
+    #
+    # groups_shells_consistency()
+    #
+    ################################################################################
     def groups_shells_consistency(self):
         """
         Ensures consistency between groups and shells. In particular:
@@ -500,17 +499,17 @@ class ConfigParameters:
             - check that all shells are referenced in the groups
             
         """
-# Special case: no groups is defined
+        # Special case: no groups is defined
         if self.ngroups == 0:
-# Check that 'nshells = 1'
+            # Check that 'nshells = 1'
             assert self.nshells == 1, "At least one group must be defined if there are more than one shells."
 
-# Otherwise create a single group taking group information from [Shell] section
+            # Otherwise create a single group taking group information from [Shell] section
             self.groups.append({})
             self.groups[0]['index'] = '1'
-# Check that the single '[Shell]' section contains enough information
-# (required group parameters except 'shells')
-# and move it to the `groups` dictionary
+            # Check that the single '[Shell]' section contains enough information
+            # (required group parameters except 'shells')
+            # and move it to the `groups` dictionary
             sh_gr_required = dict(self.gr_required)
             sh_gr_required.pop('shells')
             try:
@@ -521,10 +520,10 @@ class ConfigParameters:
             except KeyError:
                 message = "One [Shell] section is specified but no explicit [Group] section is provided."
                 message += " In this case the [Shell] section must contain all required group information.\n"
-                message += "  Required parameters are: %s"%(list(sh_gr_required.keys()))
+                message += "  Required parameters are: %s" % (list(sh_gr_required.keys()))
                 raise KeyError(message)
 
-# Do the same for optional group parameters, but do not raise an exception
+            # Do the same for optional group parameters, but do not raise an exception
             for par in list(self.gr_optional.keys()):
                 try:
                     key = self.gr_optional[par][0]
@@ -534,13 +533,13 @@ class ConfigParameters:
                     if len(self.gr_optional[par]) > 2:
                         self.groups[0][key] = self.gr_optional[par][2]
                     continue
-# Add the index of the single shell into the group
+            # Add the index of the single shell into the group
             self.groups[0].update({'shells': [1]})
 
-#
-# Consistency checks
-#
-# Check the existence of shells referenced in the groups
+        #
+        # Consistency checks
+        #
+        # Check the existence of shells referenced in the groups
         def find_shell_by_user_index(uindex):
             for ind, shell in enumerate(self.shells):
                 if shell['user_index'] == uindex:
@@ -555,50 +554,49 @@ class ConfigParameters:
                 try:
                     ind, shell = find_shell_by_user_index(user_ind)
                 except KeyError:
-                    raise Exception("Shell %i referenced in group '%s' does not exist"%(user_ind, group['index']))
+                    raise Exception("Shell %i referenced in group '%s' does not exist" % (user_ind, group['index']))
                 sh_inds.append(ind)
 
-# If [Shell] section contains (potentially conflicting) group parameters
-# remove them and issue a warning.
-#
-# First, required group parameters
+                # If [Shell] section contains (potentially conflicting) group parameters
+                # remove them and issue a warning.
+                #
+                # First, required group parameters
                 for par in list(self.gr_required.keys()):
                     try:
                         key = self.gr_required[par][0]
                         value = shell.pop(key)
                         mess = ("  Redundant group parameter '%s' in [Shell] section"
-                                " %i is discarded"%(par, user_ind))
+                                " %i is discarded" % (par, user_ind))
                         issue_warning(mess)
                     except KeyError:
                         continue
 
-# Second, optional group parameters
+                # Second, optional group parameters
                 for par in list(self.gr_optional.keys()):
                     try:
                         key = self.gr_optional[par][0]
                         value = shell.pop(key)
                         mess = ("  Redundant group parameter '%s' in [Shell] section"
-                                " %i is discarded"%(par, user_ind))
+                                " %i is discarded" % (par, user_ind))
                         issue_warning(mess)
                     except KeyError:
                         continue
 
             sh_all_inds += sh_inds
-# Replace user shell indices with internal ones
+            # Replace user shell indices with internal ones
             group['shells'] = sh_inds
 
         sh_refs_used = list(set(sh_all_inds))
         sh_refs_used.sort()
 
-# Check that all shells are referenced in the groups
+        # Check that all shells are referenced in the groups
         assert sh_refs_used == list(range(self.nshells)), "Some shells are not inside any of the groups"
 
-
-################################################################################
-#
-# parse_general()
-#
-################################################################################
+    ################################################################################
+    #
+    # parse_general()
+    #
+    ################################################################################
     def parse_general(self):
         """
         Parses [General] section.
@@ -606,8 +604,8 @@ class ConfigParameters:
         self.general = {}
         sections = self.cp.sections()
         gen_section = [s for s in sections if s.lower() == 'general']
-# If no [General] section is found parse a dummy section name to the parser
-# to reset parameters to their default values
+        # If no [General] section is found parse a dummy section name to the parser
+        # to reset parameters to their default values
         if len(gen_section) > 1:
             raise Exception("More than one section [General] is found")
         if len(gen_section) == 0:
@@ -616,11 +614,11 @@ class ConfigParameters:
         parsed = self.parse_parameter_set(gen_section, self.gen_optional, exception=False)
         self.general.update(parsed)
 
-################################################################################
-#
-# Main parser function
-#
-################################################################################
+    ################################################################################
+    #
+    # Main parser function
+    #
+    ################################################################################
     def parse_input(self):
         """
         Parses input conf-file.
@@ -630,6 +628,7 @@ class ConfigParameters:
         self.parse_groups()
 
         self.groups_shells_consistency()
+
 
 #
 # Obsolete part
@@ -647,13 +646,12 @@ if __name__ == '__main__':
         else:
             vasp_dir = './'
 
-
-#    plocar = vaspio.Plocar()
-#    plocar.from_file(vasp_dir)
-#    poscar = vaspio.Poscar()
-#    poscar.from_file(vasp_dir)
-#    kpoints = vaspio.Kpoints()
-#    kpoints.from_file(vasp_dir)
+    #    plocar = vaspio.Plocar()
+    #    plocar.from_file(vasp_dir)
+    #    poscar = vaspio.Poscar()
+    #    poscar.from_file(vasp_dir)
+    #    kpoints = vaspio.Kpoints()
+    #    kpoints.from_file(vasp_dir)
     eigenval = vaspio.Eigenval()
     eigenval.from_file(vasp_dir)
     doscar = vaspio.Doscar()

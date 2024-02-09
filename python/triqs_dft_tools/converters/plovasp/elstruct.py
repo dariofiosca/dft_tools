@@ -1,4 +1,3 @@
-
 ################################################################################
 #
 # TRIQS: a Toolbox for Research in Interacting Quantum Systems
@@ -30,6 +29,7 @@ r"""
     Internal representation of VASP electronic structure data.
 """
 import numpy as np
+
 
 class ElectronicStructure:
     """
@@ -71,26 +71,26 @@ class ElectronicStructure:
         except AttributeError:
             pass
 
-# Note that one should not subtract this Fermi level from eigenvalues
-# here because the true Fermi level might be provided by conf-file
-# (for instance, for spaghetti calculations)
+        # Note that one should not subtract this Fermi level from eigenvalues
+        # here because the true Fermi level might be provided by conf-file
+        # (for instance, for spaghetti calculations)
         try:
             self.efermi = vasp_data.doscar.efermi
         except AttributeError:
             pass
 
-# Note that the number of spin-components of projectors might be different from those
-# of bands in case of non-collinear calculations
+        # Note that the number of spin-components of projectors might be different from those
+        # of bands in case of non-collinear calculations
         self.nspin = vasp_data.plocar.nspin
         self.nband = vasp_data.plocar.nband
 
-# Check that the number of k-points is the same in all files
+        # Check that the number of k-points is the same in all files
         _, ns_plo, nk_plo, nb_plo = vasp_data.plocar.plo.shape
         assert nk_plo == self.nktot, "PLOCAR is inconsistent with IBZKPT (number of k-points)"
 
-# FIXME: Reading from EIGENVAL is obsolete and should be
-#        removed completely.
-#        if not vasp_data.eigenval.eigs is None:
+        # FIXME: Reading from EIGENVAL is obsolete and should be
+        #        removed completely.
+        #        if not vasp_data.eigenval.eigs is None:
         if False:
             print("eigvals from EIGENVAL")
             self.eigvals = vasp_data.eigenval.eigs
@@ -99,29 +99,35 @@ class ElectronicStructure:
             nk_eig = vasp_data.eigenval.nktot
             assert nk_eig == self.nktot, "PLOCAR is inconsistent with EIGENVAL (number of k-points)"
 
-# Check that the number of band is the same in PROJCAR and EIGENVAL
+            # Check that the number of band is the same in PROJCAR and EIGENVAL
             assert nb_plo == self.nband, "PLOCAR is inconsistent with EIGENVAL (number of bands)"
         else:
-            print("eigvals from LOCPROJ")
-            self.eigvals = vasp_data.plocar.eigs
-            self.ferw = vasp_data.plocar.ferw.transpose((2, 0, 1))
+            try:
+                print("eigvals from EIGVALS")
+                self.eigvals = vasp_data.eigenval.eigs
+                self.ferw = vasp_data.eigenval.ferw.transpose((2, 0, 1))
+            except AttributeError:
+                print("eigvals from LOCPROJ")
+                self.eigvals = vasp_data.plocar.eigs
+                self.ferw = vasp_data.plocar.ferw.transpose((2, 0, 1))
+
             self.efermi = vasp_data.doscar.efermi
 
-# For later use it is more convenient to use a different order of indices
-# [see ProjectorGroup.orthogonalization()]
+        # For later use it is more convenient to use a different order of indices
+        # [see ProjectorGroup.orthogonalization()]
         self.proj_raw = vasp_data.plocar.plo
         self.proj_params = vasp_data.plocar.proj_params
 
-# Not needed any more since PROJCAR contains projectors only for a subset of sites
-# Check that the number of atoms is the same in PLOCAR and POSCAR
-#        natom_plo = vasp_data.plocar.params['nion']
-#        assert natom_plo == self.natom, "PLOCAR is inconsistent with POSCAR (number of atoms)"
+        # Not needed any more since PROJCAR contains projectors only for a subset of sites
+        # Check that the number of atoms is the same in PLOCAR and POSCAR
+        #        natom_plo = vasp_data.plocar.params['nion']
+        #        assert natom_plo == self.natom, "PLOCAR is inconsistent with POSCAR (number of atoms)"
         self.structure = {'a_brav': vasp_data.poscar.a_brav}
         self.structure['nqtot'] = vasp_data.poscar.nq
         self.structure['kpt_basis'] = vasp_data.poscar.kpt_basis
         self.structure['ntypes'] = vasp_data.poscar.ntypes
         self.structure['nq_types'] = vasp_data.poscar.nions
-# Concatenate coordinates grouped by type into one array
+        # Concatenate coordinates grouped by type into one array
         self.structure['qcoords'] = np.vstack(vasp_data.poscar.q_types)
         self.structure['type_of_ion'] = vasp_data.poscar.type_of_ion
 
@@ -129,15 +135,14 @@ class ElectronicStructure:
 
         for ik in range(self.nktot):
             for ii in range(3):
-                self.kmesh['kpoints_cart'][ik] += self.kmesh['kpoints'][ik,ii]*self.structure['kpt_basis'][:,ii]
+                self.kmesh['kpoints_cart'][ik] += self.kmesh['kpoints'][ik, ii] * self.structure['kpt_basis'][:, ii]
 
-# FIXME: This can be removed if ion coordinates are stored in a continuous array
-## Construct a map to access coordinates by index
-#        self.structure['ion_index'] = []
-#        for isort, nq in enumerate(self.structure['nq_types']):
-#            for iq in range(nq):
-#                self.structure['ion_index'].append((isort, iq))
-
+    # FIXME: This can be removed if ion coordinates are stored in a continuous array
+    ## Construct a map to access coordinates by index
+    #        self.structure['ion_index'] = []
+    #        for isort, nq in enumerate(self.structure['nq_types']):
+    #            for iq in range(nq):
+    #                self.structure['ion_index'].append((isort, iq))
 
     def debug_density_matrix(self):
         """
@@ -149,9 +154,9 @@ class ElectronicStructure:
         nions = len(ions)
         norb = nproj // nions
 
-# Spin factor
+        # Spin factor
         sp_fac = 2.0 if ns == 1 and self.nc_flag == False else 1.0
-        
+
         if self.nc_flag == False:
             den_mat = np.zeros((ns, nproj, nproj), dtype=float)
             overlap = np.zeros((ns, nproj, nproj), dtype=float)
@@ -159,7 +164,8 @@ class ElectronicStructure:
                 for ik in range(nk):
                     kweight = self.kmesh['kweights'][ik]
                     occ = self.ferw[ispin, ik, :]
-                    den_mat[ispin, :, :] += np.dot(plo[:, ispin, ik, :] * occ, plo[:, ispin, ik, :].T.conj()).real * kweight * sp_fac
+                    den_mat[ispin, :, :] += np.dot(plo[:, ispin, ik, :] * occ,
+                                                   plo[:, ispin, ik, :].T.conj()).real * kweight * sp_fac
                     ov = np.dot(plo[:, ispin, ik, :], plo[:, ispin, ik, :].T.conj()).real
                     overlap[ispin, :, :] += ov * kweight
             # Output only the site-diagonal parts of the matrices
@@ -178,15 +184,15 @@ class ElectronicStructure:
                             dm[iorb, iorb2] = den_mat[ispin, ind, ind2]
                             ov[iorb, iorb2] = overlap[ispin, ind, ind2]
 
-                    print("  Density matrix" + (12*norb - 12 + 2)*" " + "Overlap")
+                    print("  Density matrix" + (12 * norb - 12 + 2) * " " + "Overlap")
                     for drow, dov in zip(dm, ov):
                         out = ''.join(map("{0:12.7f}".format, drow))
                         out += "    "
                         out += ''.join(map("{0:12.7f}".format, dov))
                         print(out)
-                    
-                    
-                    
+
+
+
         else:
             print("!! WARNING !! Non Collinear Routine")
             den_mat = np.zeros((ns, nproj, nproj), dtype=float)
@@ -195,7 +201,8 @@ class ElectronicStructure:
                 for ik in range(nk):
                     kweight = self.kmesh['kweights'][ik]
                     occ = self.ferw[ispin, ik, :]
-                    den_mat[ispin, :, :] += np.dot(plo[:, ispin, ik, :] * occ, plo[:, ispin, ik, :].T.conj()).real * kweight * sp_fac
+                    den_mat[ispin, :, :] += np.dot(plo[:, ispin, ik, :] * occ,
+                                                   plo[:, ispin, ik, :].T.conj()).real * kweight * sp_fac
                     ov = np.dot(plo[:, ispin, ik, :], plo[:, ispin, ik, :].T.conj()).real
                     overlap[ispin, :, :] += ov * kweight
             # Output only the site-diagonal parts of the matrices
@@ -214,11 +221,9 @@ class ElectronicStructure:
                             dm[iorb, iorb2] = den_mat[ispin, ind, ind2]
                             ov[iorb, iorb2] = overlap[ispin, ind, ind2]
 
-                    print("  Density matrix" + (12*norb - 12 + 2)*" " + "Overlap")
+                    print("  Density matrix" + (12 * norb - 12 + 2) * " " + "Overlap")
                     for drow, dov in zip(dm, ov):
                         out = ''.join(map("{0:12.7f}".format, drow))
                         out += "    "
                         out += ''.join(map("{0:12.7f}".format, dov))
                         print(out)
-
-
